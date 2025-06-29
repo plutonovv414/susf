@@ -1,0 +1,49 @@
+name: Build Kernel for veux with SuSFs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Clone Kernel Source
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+
+    - name: 🛠️ Set up Environment
+      run: |
+        sudo apt update
+        sudo apt install -y git make bc bison flex libssl-dev \
+          libncurses5-dev ccache clang curl unzip zip python3 \
+          python3-pip libelf-dev build-essential device-tree-compiler
+
+    - name: ⚙️ Clone Toolchain
+      run: |
+        git clone --depth=1 https://github.com/arter97/arm64-gcc prebuilt/gcc
+
+    - name: 📦 Clone AnyKernel3
+      run: |
+        git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git
+
+    - name: 🔧 Build Kernel
+      run: |
+        export ARCH=arm64
+        export SUBARCH=arm64
+        export CROSS_COMPILE=$(pwd)/prebuilt/gcc/bin/aarch64-linux-gnu-
+        make veux_defconfig
+        make -j$(nproc)
+
+    - name: 📦 Pack to AnyKernel3
+      run: |
+        cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+        cd AnyKernel3
+        zip -r9 ../new-boot.img.zip ./*
+
+    - name: 💾 Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: new-boot.img
+        path: new-boot.img.zip
