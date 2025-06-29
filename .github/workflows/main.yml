@@ -43,7 +43,7 @@ jobs:
         zip -r9 ../new-boot.img.zip ./*
 
     - name: 💾 Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: new-boot.img
         path: new-boot.img.zip
